@@ -1,0 +1,14 @@
+{
+    "name": "arc-privacy-dapp-monorepo",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "npm run dev --workspace=@arcshield/frontend",
+        "build:contracts": "cd packages/contracts && forge build",
+        "test:contracts": "cd packages/contracts && forge test",
+        "deploy:contracts": "cd packages/contracts && forge create src/ConfidentialTransferHelper.sol:ConfidentialTransferHelper"
+    }
+}
