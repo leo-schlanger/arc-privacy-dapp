@@ -1,72 +1,81 @@
 import { useState } from 'react';
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { parseUnits } from 'viem';
 
-/**
- * Interface representing the proof data structure 
- * expected by the ConfidentialTransferHelper contract.
- */
+const CONTRACT_ABI = [
+    {
+        "type": "function",
+        "name": "confidentialTransfer",
+        "inputs": [
+            { "name": "proof", "type": "bytes", "internalType": "bytes" },
+            { "name": "root", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "nullifierHash", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "recipient", "type": "address", "internalType": "address" },
+            { "name": "amount", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [{ "name": "success", "type": "bool", "internalType": "bool" }],
+        "stateMutability": "nonpayable"
+    }
+] as const;
+
+// Replace with deployed address
+const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000001234";
+
 interface ProofData {
-    proof: string; // Hex string of bytes
-    root: string;  // Hex string
-    nullifierHash: string; // Hex string
-    recipient: string;
-    amount: string;
+    proof: `0x${string}`;
+    root: `0x${string}`;
+    nullifierHash: `0x${string}`;
+    recipient: `0x${string}`;
+    amount: bigint;
 }
 
 export const useArcPrivacy = () => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const { writeContract, data: hash, error: writeError, isPending } = useWriteContract();
 
-    /**
-     * Mocks the generation of a Zero-Knowledge Proof.
-     * In a real app, this would use a WASM-based prover (e.g., snarkjs/circom).
-     */
-    const generateProof = async (amount: string, recipient: string): Promise<ProofData> => {
-        setIsLoading(true);
-        setError(null);
+    const { isLoading: isConfirming, isSuccess: isConfirmed } =
+        useWaitForTransactionReceipt({ hash });
 
+    const generateProof = async (amountStr: string, recipient: string): Promise<ProofData> => {
+        setIsGenerating(true);
+        // Mock proof generation
         return new Promise((resolve) => {
             setTimeout(() => {
-                // Mocked proof data
-                const mockProof: ProofData = {
-                    proof: "0x1234567890abcdef...", // Placeholder proof bytes
-                    root: "0xabcf...",              // Placeholder merkle root
-                    nullifierHash: "0xdeadbeef...", // Placeholder nullifier
-                    recipient,
-                    amount
-                };
-                setIsLoading(false);
-                resolve(mockProof);
-            }, 2000); // Simulate 2s computation time
+                setIsGenerating(false);
+                resolve({
+                    proof: "0x12345678" as `0x${string}`,
+                    root: "0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`,
+                    nullifierHash: "0x0000000000000000000000000000000000000000000000000000000000001111" as `0x${string}`,
+                    recipient: recipient as `0x${string}`,
+                    amount: parseUnits(amountStr, 6) // USDC 6 decimals
+                });
+            }, 1500);
         });
     };
 
-    /**
-     * Stub for sending the transaction to the contract.
-     * Connects with Wagmi/Viem in the full implementation.
-     */
-    const sendConfidentialTransaction = async (proofData: ProofData) => {
-        setIsLoading(true);
-        try {
-            console.log("Submitting proof to Arc Network:", proofData);
-
-            // TODO: Implement Wagmi contract write here using ConfidentialTransferHelper ABI
-            // await writeContract({ ... })
-
-            await new Promise(r => setTimeout(r, 1000)); // Simulate network wait
-
-            setIsLoading(false);
-            return true;
-        } catch (err: any) {
-            setIsLoading(false);
-            setError(err.message || 'Transaction failed');
-            throw err;
-        }
+    const sendConfidentialTransaction = (proofData: ProofData) => {
+        writeContract({
+            address: CONTRACT_ADDRESS,
+            abi: CONTRACT_ABI,
+            functionName: 'confidentialTransfer',
+            args: [
+                proofData.proof,
+                proofData.root,
+                proofData.nullifierHash,
+                proofData.recipient,
+                proofData.amount
+            ],
+        });
     };
 
     return {
         generateProof,
         sendConfidentialTransaction,
-        isLoading,
-        error
+        isGenerating,
+        isPending,
+        isConfirming,
+        isConfirmed,
+        hash,
+        error: writeError
     };
 };

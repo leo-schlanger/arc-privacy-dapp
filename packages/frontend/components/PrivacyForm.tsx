@@ -1,84 +1,103 @@
 import React, { useState } from 'react';
 import { useArcPrivacy } from '../hooks/useArcPrivacy';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
 
 export const PrivacyForm = () => {
+    const { isConnected } = useAccount();
     const [amount, setAmount] = useState('');
     const [recipient, setRecipient] = useState('');
-    const { generateProof, sendConfidentialTransaction, isLoading, error } = useArcPrivacy();
+
+    const {
+        generateProof,
+        sendConfidentialTransaction,
+        isGenerating,
+        isPending,
+        isConfirming,
+        isConfirmed,
+        hash,
+        error
+    } = useArcPrivacy();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!amount || !recipient) return;
 
         try {
-            console.log("Starting confidential transaction flow...");
-
-            // 1. Generate ZK Proof
             const proofData = await generateProof(amount, recipient);
-
-            // 2. Send Transaction
-            await sendConfidentialTransaction(proofData);
-
-            alert('Transaction submitted confidentially!');
+            sendConfidentialTransaction(proofData);
         } catch (err) {
             console.error(err);
         }
     };
 
+    const isLoading = isGenerating || isPending || isConfirming;
+
     return (
-        <div className="w-full max-w-md p-6 bg-gray-800 rounded-xl shadow-2xl border border-gray-700">
-            <h2 className="text-2xl font-bold text-white mb-6">Confidential Transfer</h2>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label htmlFor="recipient" className="block text-sm font-medium text-gray-300">
-                        Recipient Address (0x...)
-                    </label>
-                    <input
-                        id="recipient"
-                        type="text"
-                        value={recipient}
-                        onChange={(e) => setRecipient(e.target.value)}
-                        className="mt-1 block w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0x123..."
-                    />
-                </div>
-
-                <div>
-                    <label htmlFor="amount" className="block text-sm font-medium text-gray-300">
-                        Amount (USDC)
-                    </label>
-                    <input
-                        id="amount"
-                        type="number"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="mt-1 block w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="100.00"
-                    />
-                </div>
-
-                {error && (
-                    <div className="text-red-400 text-sm bg-red-900/20 p-2 rounded">
-                        Error: {error}
-                    </div>
-                )}
-
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    className={`w-full py-3 px-4 rounded-md font-semibold text-white transition-colors ${isLoading
-                            ? 'bg-blue-800 cursor-not-allowed'
-                            : 'bg-blue-600 hover:bg-blue-700'
-                        }`}
-                >
-                    {isLoading ? 'Generating Proof...' : 'Send Privately'}
-                </button>
-            </form>
-
-            <div className="mt-4 text-xs text-gray-500 text-center">
-                Powered by Arc Network Privacy Precompile
+        <div className="w-full max-w-md p-6 bg-gray-900/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-800">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white">Private Transfer</h2>
+                <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />
             </div>
+
+            {!isConnected ? (
+                <div className="text-center py-10 text-gray-400">
+                    Please connect your wallet to start.
+                </div>
+            ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-xs uppercase text-gray-500 font-semibold mb-1">To</label>
+                        <input
+                            type="text"
+                            value={recipient}
+                            onChange={(e) => setRecipient(e.target.value)}
+                            className="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            placeholder="0x..."
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs uppercase text-gray-500 font-semibold mb-1">Amount (USDC)</label>
+                        <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            placeholder="100.00"
+                        />
+                    </div>
+
+                    {error && (
+                        <div className="p-3 bg-red-900/30 border border-red-900 rounded text-red-400 text-xs">
+                            {error.message}
+                        </div>
+                    )}
+
+                    {hash && (
+                        <div className="p-3 bg-green-900/30 border border-green-900 rounded text-green-400 text-xs break-all">
+                            Tx Hash: {hash}
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={isLoading || isConfirmed}
+                        className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] ${isLoading
+                                ? 'bg-gray-700 cursor-not-allowed text-gray-400'
+                                : isConfirmed
+                                    ? 'bg-green-600 hover:bg-green-500 text-white'
+                                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white'
+                            }`}
+                    >
+                        {isGenerating ? 'Generating ZK Proof...' :
+                            isPending ? 'Confirm in Wallet...' :
+                                isConfirming ? 'Verifying on Arc...' :
+                                    isConfirmed ? 'Transfer Complete!' :
+                                        'Send Privately'}
+                    </button>
+                </form>
+            )}
         </div>
     );
 };
