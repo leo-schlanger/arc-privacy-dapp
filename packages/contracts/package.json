@@ -1,0 +1,13 @@
+{
+    "name": "@arcshield/contracts",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "build": "forge build",
+        "test": "forge test",
+        "deploy": "forge create src/ConfidentialTransferHelper.sol:ConfidentialTransferHelper"
+    },
+    "devDependencies": {
+        "forge-std": "github:foundry-rs/forge-std"
+    }
+}
