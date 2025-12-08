@@ -27,10 +27,7 @@ artifacts/
 typechain/
 typechain-types/
 
-# Forge
-lib/
-!lib/forge-std
-!lib/openzeppelin-contracts
+
 
 # Editors
 .vscode/
