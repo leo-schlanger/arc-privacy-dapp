@@ -1,25 +1,8 @@
 import { useState } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits } from 'viem';
-
-const CONTRACT_ABI = [
-    {
-        "type": "function",
-        "name": "confidentialTransfer",
-        "inputs": [
-            { "name": "proof", "type": "bytes", "internalType": "bytes" },
-            { "name": "root", "type": "bytes32", "internalType": "bytes32" },
-            { "name": "nullifierHash", "type": "bytes32", "internalType": "bytes32" },
-            { "name": "recipient", "type": "address", "internalType": "address" },
-            { "name": "amount", "type": "uint256", "internalType": "uint256" }
-        ],
-        "outputs": [{ "name": "success", "type": "bool", "internalType": "bool" }],
-        "stateMutability": "nonpayable"
-    }
-] as const;
-
-// Replace with deployed address
-const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000001234";
+import { CONFIDENTIAL_TRANSFER_ABI } from '../lib/contracts';
+import { CONFIDENTIAL_HELPER_ADDRESS } from '../lib/constants';
 
 interface ProofData {
     proof: `0x${string}`;
@@ -55,8 +38,8 @@ export const useArcPrivacy = () => {
 
     const sendConfidentialTransaction = (proofData: ProofData) => {
         writeContract({
-            address: CONTRACT_ADDRESS,
-            abi: CONTRACT_ABI,
+            address: CONFIDENTIAL_HELPER_ADDRESS,
+            abi: CONFIDENTIAL_TRANSFER_ABI,
             functionName: 'confidentialTransfer',
             args: [
                 proofData.proof,

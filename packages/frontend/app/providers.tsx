@@ -16,7 +16,7 @@ import {
     QueryClient,
 } from "@tanstack/react-query";
 import { WagmiProvider } from 'wagmi'
-import { config } from './config'
+import { config } from '../config'
 
 const queryClient = new QueryClient();
 

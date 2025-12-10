@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useArcPrivacy } from '../hooks/useArcPrivacy';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
+import { TransactionStatus } from './TransactionStatus';
 
 export const PrivacyForm = () => {
     const { isConnected } = useAccount();
@@ -37,7 +37,6 @@ export const PrivacyForm = () => {
         <div className="w-full max-w-md p-6 bg-gray-900/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-800">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-white">Private Transfer</h2>
-                <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />
             </div>
 
             {!isConnected ? (
@@ -68,26 +67,22 @@ export const PrivacyForm = () => {
                         />
                     </div>
 
-                    {error && (
-                        <div className="p-3 bg-red-900/30 border border-red-900 rounded text-red-400 text-xs">
-                            {error.message}
-                        </div>
-                    )}
-
-                    {hash && (
-                        <div className="p-3 bg-green-900/30 border border-green-900 rounded text-green-400 text-xs break-all">
-                            Tx Hash: {hash}
-                        </div>
-                    )}
+                    <TransactionStatus
+                        hash={hash}
+                        isPending={isPending}
+                        isConfirming={isConfirming}
+                        isConfirmed={isConfirmed}
+                        error={error}
+                    />
 
                     <button
                         type="submit"
                         disabled={isLoading || isConfirmed}
                         className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] ${isLoading
-                                ? 'bg-gray-700 cursor-not-allowed text-gray-400'
-                                : isConfirmed
-                                    ? 'bg-green-600 hover:bg-green-500 text-white'
-                                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white'
+                            ? 'bg-gray-700 cursor-not-allowed text-gray-400'
+                            : isConfirmed
+                                ? 'bg-green-600 hover:bg-green-500 text-white'
+                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white'
                             }`}
                     >
                         {isGenerating ? 'Generating ZK Proof...' :
